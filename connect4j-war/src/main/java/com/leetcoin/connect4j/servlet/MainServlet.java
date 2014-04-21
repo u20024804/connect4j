@@ -67,7 +67,7 @@ public class MainServlet extends HttpServlet {
                 }
             }
 
-            final String gameLink = req.getRequestURL()+"/?g=" + gameKey;
+            final String gameLink = req.getRequestURL()+"?g=" + gameKey;
 
             if(game != null) {
 
