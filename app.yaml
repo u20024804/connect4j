@@ -1,0 +1,11 @@
+application: connect4j-556
+version: 1
+runtime: java
+
+handlers:
+- url: /
+  servlet: com.leetcoin.connect4j.servlet.MainServlet
+- url: /opened
+  servlet: com.leetcoin.connect4j.servlet.OpenedServlet
+- url: /move
+  servlet: com.leetcoin.connect4j.servlet.MoveServlet
