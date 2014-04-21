@@ -10,6 +10,7 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 import com.leetcoin.connect4j.GameUpdater;
+import com.leetcoin.connect4j.utils.RandUtils;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -41,7 +42,7 @@ public class MainServlet extends HttpServlet {
 
         if(user != null) {
             if(gameKey == null || gameKey.trim().isEmpty()) {
-                gameKey = user.getUserId();
+                gameKey = user.getUserId() + "_" + System.currentTimeMillis() + "_" + RandUtils.nextInt();
 
                 final Key key = KeyFactory.createKey("Game", "game_key");
 
