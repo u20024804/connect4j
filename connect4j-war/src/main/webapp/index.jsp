@@ -86,6 +86,7 @@
     var state = {
         game_key: '${ game_key }',
         me: '${ me }'
+        my_google_user: '${ my_google_user }'
     };
 
     updateGame = function() {

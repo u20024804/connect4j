@@ -9,6 +9,9 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.users.User;
+import com.leetcoin.connect4j.api.PlayerDeactivate;
+
+import java.io.IOException;
 
 /**
  * Created with IntelliJ IDEA.
@@ -160,7 +163,7 @@ public class GameUpdater {
         return "";
     }
 
-    public void makeMove(final int index, final User user) {
+    public void makeMove(final int index, final User user) throws IOException {
         final String userO = (String) game.getProperty("userO");
         final String userX = (String) game.getProperty("userX");
         final String gameKey = (String) game.getProperty("game_key");
@@ -183,6 +186,34 @@ public class GameUpdater {
                     if(!"".equals(winBoard)) {
                         game.setProperty("winner", moveX ? userX : userO);
                         game.setProperty("winning_board", winBoard);
+
+                        final String playerKeys[] = {userX, userO};
+                        final String playerNames[] = {userX, userO};
+                        final String weapons[] = {"X", "O"};
+                        final int kills[];
+                        final int deaths[];
+                        final int ranks[];
+
+                        if(moveX) {
+                            kills = new int[] {1, 0};
+                            deaths = new int[] {0, 1};
+                            ranks = new int[] {1601, 1599};
+                        } else {
+                            kills = new int[] {0, 1};
+                            deaths = new int[] {1, 0};
+                            ranks = new int[] {1599, 1601};
+                        }
+
+                        MatchResults.setMatchResults(game, "connect4j", playerKeys,
+                                playerNames, weapons, kills, deaths, ranks);
+
+                        if(moveX) {
+                            PlayerDeactivate.deactivatePlayer(game, userX, 1601, 10980);
+                            PlayerDeactivate.deactivatePlayer(game, userO, 1599, 9000);
+                        } else {
+                            PlayerDeactivate.deactivatePlayer(game, userO, 1601, 10980);
+                            PlayerDeactivate.deactivatePlayer(game, userX, 1599, 9000);
+                        }
                     }
 
                     final DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();

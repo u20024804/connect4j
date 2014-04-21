@@ -1,15 +1,20 @@
 package com.leetcoin.connect4j.servlet;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.appengine.api.channel.ChannelMessage;
 import com.google.appengine.api.channel.ChannelService;
 import com.google.appengine.api.channel.ChannelServiceFactory;
 import com.google.appengine.api.channel.ChannelServicePb;
 import com.google.appengine.api.datastore.*;
 import com.google.appengine.api.search.QueryOptions;
+import com.google.appengine.api.taskqueue.DeferredTask;
+import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 import com.leetcoin.connect4j.GameUpdater;
+import com.leetcoin.connect4j.api.PlayerActivate;
+import com.leetcoin.connect4j.api.ServerCreate;
 import com.leetcoin.connect4j.utils.RandUtils;
 
 import javax.servlet.RequestDispatcher;
@@ -18,6 +23,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload;
 
 /**
  * Created with IntelliJ IDEA.
@@ -37,12 +44,19 @@ public class MainServlet extends HttpServlet {
         final ChannelService channelService = ChannelServiceFactory.getChannelService();
         final User user = userService.getCurrentUser();
 
+        final String gameLink;
         String gameKey = req.getParameter("g");
         Entity game = null;
 
         if(user != null) {
             if(gameKey == null || gameKey.trim().isEmpty()) {
                 gameKey = user.getUserId() + "_" + System.currentTimeMillis() + "_" + RandUtils.nextInt();
+                gameLink = req.getRequestURL()+"?g=" + gameKey;
+                final String title = user+"s game";
+                final JSONObject jsonObject = ServerCreate.createServer(req.getRemoteHost(), gameLink, title);
+                final String serverApiKey = jsonObject.getString("server_api_key");
+                final String serverSecret = jsonObject.getString("server_secret");
+                final String serverKey = jsonObject.getString("server_key");
 
                 final Key key = KeyFactory.createKey("Game", "game_key");
 
@@ -51,9 +65,25 @@ public class MainServlet extends HttpServlet {
                 game.setProperty("userX", user.getUserId());
                 game.setProperty("moveX", true);
                 game.setProperty("board", DEFAULT_BOARD);
+                game.setProperty("server_api_key", serverApiKey);
+                game.setProperty("server_secret", serverSecret);
+                game.setProperty("server_key", serverKey);
 
                 datastore.put(game);
+
+                final String game_key = gameKey;
+                QueueFactory.getDefaultQueue().add(withPayload(new DeferredTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            PlayerActivate.checkAuthorization(user.getUserId(), game_key, "X", 10);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }));
             } else {
+                gameLink = req.getRequestURL()+"?g=" + gameKey;
                 final Key key = KeyFactory.createKey("Game", "game_key");
                 final Query query = new Query("Game");
                 query.setFilter(new Query.FilterPredicate(
@@ -65,9 +95,19 @@ public class MainServlet extends HttpServlet {
                     game.setProperty("userO", user.getUserId());
                     datastore.put(game);
                 }
-            }
 
-            final String gameLink = req.getRequestURL()+"?g=" + gameKey;
+                final String game_key = gameKey;
+                QueueFactory.getDefaultQueue().add(withPayload(new DeferredTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            PlayerActivate.checkAuthorization(user.getUserId(), game_key, "O", 0);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }));
+            }
 
             if(game != null) {
 
@@ -78,6 +118,7 @@ public class MainServlet extends HttpServlet {
                 req.setAttribute("game_key", gameKey);
                 req.setAttribute("game_link", gameLink);
                 req.setAttribute("initial_message", new GameUpdater(game).getGameMessage());
+                req.setAttribute("my_google_user", user.toString());
 
                 final RequestDispatcher dispatcher = req.getRequestDispatcher("index.jsp");
                 dispatcher.forward(req, resp);
