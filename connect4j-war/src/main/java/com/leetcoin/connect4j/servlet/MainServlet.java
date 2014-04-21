@@ -32,11 +32,23 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withPayload
  * Date: 21/4/14
  * Time: 2:21 AM
  * To change this template use File | Settings | File Templates.
+ *
+ * The main UI page, renders the 'index.html' template.
+ *
  */
 public class MainServlet extends HttpServlet {
 
     private static final String DEFAULT_BOARD = "                                                                " ;
 
+    /**
+     * Renders the main page. When this page is shown, we create a new
+     * channel to push asynchronous updates to the client.
+     *
+     * @param req
+     * @param resp
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         final UserService userService = UserServiceFactory.getUserService();
@@ -96,6 +108,7 @@ public class MainServlet extends HttpServlet {
                     datastore.put(game);
                 }
 
+                // Fire off a task to check to see if this user has authorized play on leetcoin.com
                 final String game_key = gameKey;
                 QueueFactory.getDefaultQueue().add(withPayload(new DeferredTask() {
                     @Override

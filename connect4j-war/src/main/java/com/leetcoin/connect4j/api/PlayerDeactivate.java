@@ -15,6 +15,9 @@ import java.util.logging.Logger;
  * Date: 21/4/14
  * Time: 5:27 PM
  * To change this template use File | Settings | File Templates.
+ *
+ * send the list to the api server
+ *
  */
 public class PlayerDeactivate {
 
@@ -30,6 +33,7 @@ public class PlayerDeactivate {
         final String nonce = PythonUtils.getNanoTime();
 
         final String params = "nonce="+nonce+"&platformid="+platformId;
+        // Hash the params string to produce the Sign header value
         final String sign = HMacSHA512Utils.encrypt(params);
         log.info("params: "+params);
         log.info("sign: "+sign);

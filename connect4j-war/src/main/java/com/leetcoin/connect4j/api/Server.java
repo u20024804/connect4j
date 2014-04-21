@@ -8,6 +8,9 @@ import com.alibaba.fastjson.JSONObject;
  * Date: 21/4/14
  * Time: 3:55 PM
  * To change this template use File | Settings | File Templates.
+ *
+ * a leetcoin server
+ *
  */
 public class Server {
 

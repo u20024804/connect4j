@@ -54,6 +54,7 @@ public class ServerCreate {
         final String nonce = PythonUtils.getNanoTime();
         final String params = "nonce="+nonce+"&server="+encodedServerJson;
 
+        // Hash the params string to produce the Sign header value
         final String sign = HMacSHA512Utils.encrypt(params);
 
         log.info("Sign: "+ sign);

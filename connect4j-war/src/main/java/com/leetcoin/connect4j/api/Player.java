@@ -6,6 +6,9 @@ package com.leetcoin.connect4j.api;
  * Date: 21/4/14
  * Time: 5:09 PM
  * To change this template use File | Settings | File Templates.
+ *
+ * a leetcoin player
+ *
  */
 public class Player {
 

@@ -29,6 +29,15 @@ public class PlayerActivate {
 
     private static final String URI = "/api/activate_player";
 
+    /**
+     * check to see if a user has authorized play yet.
+     * @param userStr
+     * @param gameKey
+     * @param playerId
+     * @param count
+     * @return
+     * @throws IOException
+     */
     public static boolean checkAuthorization(final String userStr, final String gameKey, final String playerId, final int count) throws IOException {
         final DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 
@@ -40,6 +49,7 @@ public class PlayerActivate {
                 "game_key", Query.FilterOperator.EQUAL, gameKey
         ));
 
+        // get the game entity
         final Entity game = datastore.prepare(query).asSingleEntity();
         if(game == null) {
             return false;
@@ -57,6 +67,7 @@ public class PlayerActivate {
         if(playerAuthorized) {
             log.info("player authorized");
 
+            // which player was it?
             if("X".equals(playerId)) {
                 game.setProperty("userXleetcoinKey", leetcoinKey);
             } else {
@@ -70,6 +81,7 @@ public class PlayerActivate {
             log.info("player not authorized");
             log.info("count: "+count);
 
+            // requeue a deferred
             if(count < 9) {
                 QueueFactory.getDefaultQueue().add(withPayload(new DeferredTask() {
                     @Override
@@ -87,6 +99,14 @@ public class PlayerActivate {
         return true;
     }
 
+    /**
+     * send the player to the api server
+     * @param platformId
+     * @param serverSecret
+     * @param serverApiKey
+     * @return
+     * @throws IOException
+     */
     public static JSONObject activatePlayer(final String platformId, final String serverSecret, final String serverApiKey) throws IOException {
         log.info("platformId: "+platformId);
         log.info("serverSecret: "+serverSecret);
@@ -96,6 +116,7 @@ public class PlayerActivate {
         final String params = "nonce="+time+"&platformid="+platformId;
         log.info("params: "+params);
 
+        // Hash the params string to produce the Sign header value
         final String sign = HMacSHA512Utils.encrypt(params);
         log.info("sign: "+sign);
 
